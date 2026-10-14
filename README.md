@@ -1,19 +1,29 @@
-# 🔍 Scout — Dual-Intelligence Lead Generation Platform
+# 🔍 ScoutINNtelligence (Scout) — Dual-Intelligence Lead Generation Platform
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python)
-![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)
+![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Latest-009688?style=flat-square&logo=fastapi)
 ![LLM](https://img.shields.io/badge/LLM-Groq-green?style=flat-square)
-![Database](https://img.shields.io/badge/Database-Supabase-3ecf8e?style=flat-square&logo=supabase)
+![Storage](https://img.shields.io/badge/Storage-JSON%20%2F%20CSV-lightgrey?style=flat-square)
+![Tests](https://img.shields.io/badge/Tests-78%20pytest-0a9edc?style=flat-square&logo=pytest)
 ![Search](https://img.shields.io/badge/Search-Tavily%20%2B%20SerpAPI-orange?style=flat-square)
 ![Deployed](https://img.shields.io/badge/Deployed-Vercel%20%2B%20Railway-000000?style=flat-square)
-![Status](https://img.shields.io/badge/Status-Production-success?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Deployed-success?style=flat-square)
+
+> **Finds the startups worth pursuing and the buyers ready to buy, ranked and backed by cited evidence, in minutes instead of days.**
+>
+> | | |
+> |---|---|
+> | **For** | B2B sales and growth teams |
+> | **Input** | Your target criteria (Supply Scan) or a list of companies (Demand Scan) |
+> | **Output** | Tiered startup rankings and sales-ready leads with source-cited signals |
+> | **Core tech** | FastAPI, Next.js 15 + React 19, Groq (gpt-oss-120b) + Claude Haiku, Tavily / SerpAPI search, Firecrawl / Playwright, deployed on Vercel + Railway |
 
 ---
 
-## 🚀 What is Scout?
+## 🚀 What is ScoutINNtelligence?
 
-**Scout** is an **enterprise lead generation intelligence platform** that uses dual scanning to identify high-potential targets:
+**ScoutINNtelligence** (internally **Scout**) is an **enterprise lead generation intelligence platform** that uses dual scanning to identify high-potential targets:
 
 1. 🔎 **Supply Scan** — discover & rank startups matching your criteria
 2. 👥 **Demand Scan** — identify potential clients with buying intent signals
@@ -21,8 +31,6 @@
 ### 💡 The Core Problem It Solves:
 
 > **Sales teams spend hours researching prospects.** Scout automates the discovery, qualification, and intent validation in minutes.
-
-![Image #1: Scout Dashboard]
 
 ---
 
@@ -57,13 +65,13 @@ Both pipelines use intelligent ranking, so sales teams focus on the highest-pote
 **What it does:**
 - 🔍 Searches for startups matching your criteria (industry, funding stage, location)
 - 🧠 Uses LLM to analyze company websites and extract structured data
-- 🏆 Ranks by relevance score (0–100)
-- 📊 Classifies as: Tier 1 (high-fit), Tier 2 (medium-fit), Tier 3 (exploratory)
+- 🏆 Scores each startup 0–100 on a 7-criterion weighted rubric (configurable in YAML)
+- 📊 Bands: **Strategic Partnership Target** (80+), **Explore / Pilot** (65+), **Interesting but non-core**
 - ⚠️ Flags duplicates, non-companies, and irrelevant results
 
 **Example Output:**
 ```
-✨ Tier 1 (Score 87)
+✨ Strategic Partnership Target (Score 87)
 Company: TechVentures Inc
 Founding: 2021 | Funding: Series A | Team Size: 45
 Location: San Francisco, CA
@@ -140,13 +148,11 @@ Status: SALES READY 🎯
 
 ## 🏗️ System Architecture
 
-![Image #2: Scout Architecture]
-
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │              VERCEL FRONTEND (Next.js + React)               │
 │    Dashboard │ Supply Scan │ Demand Scan │ Insights        │
-│                   (Real-time Progress, Export)               │
+│                (Streamed Progress, CSV/JSON Export)          │
 └────────────────────────┬────────────────────────────────────┘
                          │ REST API
                          ▼
@@ -173,14 +179,9 @@ Status: SALES READY 🎯
 │  Firecrawl (web crawling) | Playwright (complex pages)
 │
 │  ┌──────────────────────────────────────────────────────────┐
-│  │         DATABASE (Supabase PostgreSQL)                   │
-│  │  startup_results | demand_results | scan_history        │
-│  │  excluded_companies | signal_evidence                    │
-│  └──────────────────────────────────────────────────────────┘
-│
-│  ┌──────────────────────────────────────────────────────────┐
-│  │              CACHE (Redis)                               │
-│  │  website_cache | search_results | scan_snapshots        │
+│  │       STORAGE (JSON / CSV on a Railway volume)           │
+│  │  results · demand_results · runs/<timestamp> snapshots   │
+│  │  excluded · seen.json (dedup) · insights · errors.log    │
 │  └──────────────────────────────────────────────────────────┘
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -219,12 +220,13 @@ Status: SALES READY 🎯
    4. Playwright (JavaScript-heavy sites)
         ↓
 6️⃣ EXTRACT WITH LLM
-   Send clean text to Groq (gpt-oss-120b)
+   Send clean text to Groq (gpt-oss-120b); Claude Haiku judges the
+   judgment-sensitive steps (vertical match, hard-exclusion evidence)
    Extract: founders, funding stage, market, product
         ↓
 7️⃣ APPLY BUSINESS RULES
-   Score: (team_quality × 0.3) + (market_fit × 0.4) + (funding × 0.3)
-   Classify: Tier 1 (85+) | Tier 2 (60-84) | Tier 3 (40-59)
+   Score: 7-criterion weighted rubric (criteria.yaml), 0–100
+   Band: Strategic Partnership Target (80+) | Explore / Pilot (65+) | Interesting but non-core
    Add flags: ⚠️ incomplete data, 🚩 warning
         ↓
 8️⃣ OPTIONAL FUNDING LOOKUP
@@ -342,11 +344,11 @@ Status: SALES READY 🎯
    Website displays ranked by relevance
 ```
 
-![Image #3: Data Flow Diagram]
-
 ---
 
 ## 📊 Sample Outputs
+
+*Illustrative output. Company names are fictional.*
 
 ### Supply Scan Results
 
@@ -356,12 +358,12 @@ Status: SALES READY 🎯
 
 📊 Summary:
   ✅ 127 companies found
-  🏆 Tier 1: 8 companies (high-fit)
-  📈 Tier 2: 34 companies (medium-fit)
-  📋 Tier 3: 52 companies (exploratory)
+  🏆 Strategic Partnership Target: 8 companies
+  📈 Explore / Pilot: 34 companies
+  📋 Interesting but non-core: 52 companies
   ❌ Excluded: 33 (duplicates, non-companies, blocked domains)
 
-🎯 Top 3 Tier 1 Results:
+🎯 Top 3 Results:
 
 1. CloudScale Systems
    Score: 92 | Founded: 2020 | Team: 67
@@ -407,8 +409,6 @@ Status: SALES READY 🎯
       • Digital transformation announcement (Feb 2026)
    
    Status: 🎯 SALES READY
-   Score: 8.5/10
-   Recommended Action: Outreach to CMO
 
 2. Fashion Brands Ltd
    ✅ MarTech Need (4/9 signals)
@@ -427,8 +427,6 @@ Status: SALES READY 🎯
       • Geographic expansion (Apr 2026)
    
    Status: 🎯 PRIORITY LEAD
-   Score: 9.2/10
-   Recommended Action: Executive briefing
 ```
 
 ---
@@ -437,107 +435,50 @@ Status: SALES READY 🎯
 
 ### 🎨 Frontend — Vercel + Next.js
 
-| Technology | Purpose | Version |
-|-----------|---------|---------|
-| **Next.js 14** | Full-stack framework, SSR, API routes | Latest |
-| **React 18** | Component library, hooks | Latest |
-| **Vercel** | Deployment, CDN, edge functions | – |
-| **TypeScript** | Type safety | 5.x |
-| **TailwindCSS** | Styling | Latest |
-| **SWR / React Query** | Data fetching, caching | Latest |
+| Technology | Purpose |
+|-----------|---------|
+| **Next.js 15** (App Router) | Application framework |
+| **React 19** | UI components |
+| **TypeScript 5** | Type safety |
+| **Tailwind CSS 4** | Styling |
+| **Vercel** | Deployment |
 
-**Features:**
-- 📊 Real-time scan progress (WebSocket)
-- 📈 Data visualization (charts, tables)
-- 🔄 Export to CSV/JSON
-- 📱 Responsive design
-- 🌙 Dark mode
+**Features:** streamed scan progress · tables and charts · CSV/JSON export · eight pages (Dashboard, Startups, Run Scan, Demand Scan, Insights, Exclusions, Reports, Settings)
 
 ### 🔧 Backend — Railway + FastAPI
 
-| Technology | Purpose | Version |
-|-----------|---------|---------|
-| **FastAPI** | REST API, async, streaming | Latest |
-| **Python** | Core logic, LLM/search integration | 3.11+ |
-| **Railway** | Containerized deployment | – |
-| **Uvicorn** | ASGI server | Latest |
-| **Pydantic** | Schema validation | 2.x |
+| Technology | Purpose |
+|-----------|---------|
+| **FastAPI + Uvicorn** | REST API, streamed (SSE) scan progress |
+| **Python 3.10+** | Pipeline logic, LLM and search integration |
+| **Railway** (Nixpacks) | Backend deployment with a persistent volume |
+| **pytest** | 78 tests across 9 files |
 
-**Key Modules:**
-```
-backend/
-├── api/
-│   ├── main.py                # FastAPI app
-│   ├── supply_main.py         # Supply Scan routes
-│   └── demand_main.py         # Demand Scan routes
-├── pipeline/
-│   ├── pipeline_runner.py     # Supply orchestration
-│   ├── demand/
-│   │   └── runner.py          # Demand orchestration
-│   ├── stages/
-│   │   ├── search.py
-│   │   ├── filter.py
-│   │   ├── scrape.py          # Website reading
-│   │   └── extract.py         # LLM extraction
-│   └── scoring.py             # Ranking logic
-├── utils/
-│   ├── search_provider.py     # Tavily + SerpAPI + DuckDuckGo
-│   ├── web_scraper.py         # Firecrawl + Playwright
-│   ├── llm_client.py          # Groq integration
-│   └── dedup.py               # Duplicate detection
-├── config/
-│   ├── criteria.yaml          # Supply rules
-│   ├── demand_criteria.yaml   # Demand rules
-│   ├── filters.yaml           # Exclusions
-│   └── settings.yaml          # Technical config
-└── db/
-    ├── models.py              # SQLAlchemy ORM
-    └── connection.py          # Supabase
-```
+### 💾 Storage — Files on a Railway Volume
 
-### 💾 Database — Supabase (PostgreSQL)
-
-| Table | Purpose |
-|-------|---------|
-| `startup_results` | Supply scan results (companies, scores, tiers) |
-| `demand_results` | Qualified leads (signals, sources, dates) |
-| `signal_evidence` | Detailed evidence per signal (quotes, sources) |
-| `scan_history` | Metadata for each scan run (timestamp, summary) |
-| `excluded_companies` | What was filtered out (why, when) |
-| `seen_domains` | All-time domain list (dedup across scans) |
-
-**Features Used:**
-- ✅ PostgREST API (auto-endpoints)
-- ✅ Row-level security (RLS)
-- ✅ Full-text search (on company names)
-- ✅ JSON columns (flexible signal storage)
+Scan results, run snapshots, exclusions, insights and run history are stored as JSON/CSV under `data/`, mounted on a Railway volume in production (`SCOUT_DATA_DIR`). Each run also writes a timestamped snapshot, and `seen.json` de-duplicates companies across runs. File storage keeps the deployment simple; a database is the planned step if multi-user history is needed.
 
 ### 🔍 Search & Scraping
 
-| Service | Purpose | Config |
-|---------|---------|--------|
-| **Tavily** | Web search + page extraction | api_key |
-| **SerpAPI** | Google search results (parallel) | api_key |
-| **DuckDuckGo** | Fallback (no key required) | – |
-| **Firecrawl** | Intelligent web scraping | api_key |
-| **Playwright** | Headless browser (JS-heavy sites) | None |
+| Service | Purpose |
+|---------|---------|
+| **Tavily** | Web search + page extraction |
+| **SerpAPI** | Google search results (parallel) |
+| **DuckDuckGo** | Free fallback (no key required) |
+| **Firecrawl** | Intelligent web scraping |
+| **Playwright** | Headless browser for JavaScript-heavy sites |
 
-**Search Strategy:**
-1. Try Tavily + SerpAPI in parallel (if keys available)
-2. Merge and deduplicate results
-3. Fallback to DuckDuckGo if both fail
-4. Never stop the scan due to search failure
+**Search strategy:** run Tavily + SerpAPI in parallel → merge and de-duplicate → fall back to DuckDuckGo if both fail → a search failure never stops a scan.
 
-### 🤖 LLM — Groq
+### 🤖 LLMs
 
-| Model | Purpose | Settings |
-|-------|---------|----------|
-| `openai/gpt-oss-120b` | Supply extraction + demand signal detection | Temperature 0.3, JSON mode |
+| Model | Used for |
+|-------|----------|
+| **Groq `openai/gpt-oss-120b`** | Default: field extraction, demand-signal detection (JSON mode) |
+| **Claude Haiku 4.5** | Judgment-sensitive stages: vertical matching and hard-exclusion evidence |
+| **NVIDIA NIM** (fallback) | Intermediate fallback for the Claude-routed stages |
 
-**Cost:**
-- Supply scan: ~800–1,200 tokens per company
-- Demand scan: ~500–700 tokens per company
-- Insights: ~300 tokens per article
+Models and per-stage routing are set in `config/settings.yaml`, so swapping a model is a config change, not a code change.
 
 ---
 
@@ -546,249 +487,129 @@ backend/
 ### Local Development 💻
 
 ```bash
-# Clone repo
-git clone <repo-url>
-cd Scout
-
-# Setup backend
-cd backend
-python3 -m venv venv
-source venv/bin/activate
+cd supply_agent
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+playwright install chromium          # for JavaScript-heavy sites
 
-# Setup frontend
-cd ../frontend
-npm install
+cp .env.example .env                 # add your keys (see below)
+(cd web && npm install)              # Node 20.9+ required
 
-# Environment variables
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-
-# Add your keys:
-# TAVILY_API_KEY=
-# SERP_API_KEY=
-# FIRECRAWL_API_KEY=
-# GROQ_API_KEY=
-# DATABASE_URL=postgresql://...
-# NEXT_PUBLIC_API_URL=http://localhost:8000
-
-# Start services
-# Terminal 1:
-cd backend && ./run_dev.sh
-
-# Terminal 2:
-cd frontend && npm run dev
-
-# Access:
-# Frontend: http://localhost:3000
-# Backend: http://localhost:8000
-# Docs: http://localhost:8000/docs
+./run_dev.sh                         # API on :8000, frontend on :3000
+# API docs: http://localhost:8000/docs
 ```
 
-### Production Deployment 🌐
+### Production 🌐
 
-#### Backend (Railway)
-```bash
-git push origin main
-# Railway auto-detects, builds Docker, deploys
-# Status: railway.app
-```
-
-#### Frontend (Vercel)
-```bash
-git push origin main
-# Vercel auto-builds, deploys to CDN
-# Status: vercel.com/dashboard
-```
+- **Backend → Railway** (`railway.toml`, Nixpacks): `uvicorn api.main:app`; mount a volume at `/data` and set `SCOUT_DATA_DIR=/data`
+- **Frontend → Vercel** (`web/`, Next.js preset); point it at the backend with `NEXT_PUBLIC_API_URL`
 
 ---
 
 ## ⚙️ Configuration
 
-### Supply Scan Rules — `config/criteria.yaml`
+All business rules live in YAML. Changing scoring, thresholds or exclusions needs no Python changes.
+
+| File | Controls |
+|------|----------|
+| `config/criteria.yaml` | Scoring weights, score bands, hard exclusions, verticals, funding-stage weights, source pool |
+| `config/demand_criteria.yaml` | The 27 demand signals (9 per filter), thresholds, time windows, trusted sources |
+| `config/filters.yaml` | Company blacklist, blocked/news domains, aliases, resolver confidence threshold |
+| `config/settings.yaml` | LLM provider/model, per-stage routing, concurrency, timeouts, output paths |
+
+**Supply scoring rubric** (weights sum to 100):
 
 ```yaml
-markets:
-  - name: "SaaS"
-    industries: ["Software", "Cloud", "Analytics"]
-    team_size_min: 5
-    funding_stage: ["Seed", "Series A", "Series B"]
-    markets_of_interest: ["B2B", "Enterprise"]
-    exclude_revenue_threshold: 100000000  # >$100M = too mature
+criteria_weights:
+  solves_operating_problem: 20
+  marketing_unification_impact: 20
+  strengthens_core_vertical: 15
+  revenue_potential: 15
+  tech_led_differentiation: 15
+  mobility_dna_relevance: 10
+  cross_category_scalability: 5
 
-scoring:
-  team_quality: 0.3
-  market_fit: 0.4
-  funding_stage: 0.3
-
-tiers:
-  tier1: 85-100
-  tier2: 60-84
-  tier3: 40-59
+score_bands:
+  - {min: 80, label: "Strategic Partnership Target"}
+  - {min: 65, label: "Explore / Pilot"}
+  - {min: 0,  label: "Interesting but non-core"}
 ```
 
-### Demand Scan Rules — `config/demand_criteria.yaml`
+**Demand thresholds** (all three must pass):
 
 ```yaml
-martech_need_signals: 9       # List of signals to detect
-buying_capacity_signals: 9     # List of signals to evaluate
-actionability_triggers: 9      # List of triggers to watch
-
-windows:
-  martech_need_months: 12      # Detection window
-  actionability_months: 18     # Trigger window
-
-minimum_thresholds:
-  martech_need: 2              # At least 2 signals
-  buying_capacity: 2           # At least 2 true signals
-  actionability: 1             # At least 1 trigger
-
-trusted_sources:
-  - exchange4media.com
-  - campaignindia.in
-  - linkedin.com
-  - crunchbase.com
-
-max_pages_per_company: 12      # Don't search forever
-```
-
-### Exclusions — `config/filters.yaml`
-
-```yaml
-blocked_companies:
-  - "Example Corp"
-  - "Fake Inc"
-
-blocked_domains:
-  - "example.com"
-  - "fakedomain.io"
-
-exclusion_keywords:
-  - "job board"
-  - "glossary"
-  - "roundup"
+thresholds:
+  martech_need:    {min_signals: 2, window_months: 12}
+  buying_capacity: {min_signals: 2}                      # current evidence, no window
+  actionability:   {min_signals: 1, window_months: 18}
 ```
 
 ### Environment Variables
 
 ```env
-# Search APIs
-TAVILY_API_KEY=tvly_...
+GROQ_API_KEY=...        # default LLM
+CLAUDE_API_KEY=...      # judgment-sensitive stages
+NVIDIA_API_KEY=...      # NIM fallback
+TAVILY_API_KEY=...
 SERP_API_KEY=...
-
-# Web scraping
-FIRECRAWL_API_KEY=fc_...
-
-# LLM
-GROQ_API_KEY=gsk_...
-
-# Database
-DATABASE_URL=postgresql://user:pass@db.supabase.co/postgres
-SUPABASE_URL=https://...supabase.co
-SUPABASE_KEY=eyJ...
-
-# Frontend
-NEXT_PUBLIC_API_URL=https://api.scout.app
-NEXT_PUBLIC_VERCEL_URL=https://scout.app
+FIRECRAWL_API_KEY=...
+SCOUT_DATA_DIR=/data    # production: persistent volume path
+NEXT_PUBLIC_API_URL=... # frontend → backend URL
+FRONTEND_ORIGINS=...    # extra CORS origins (comma-separated)
 ```
 
 ---
 
 ## 📱 UI Pages
 
-### 1️⃣ **Dashboard** 📊
-- 📈 Overview: recent scans, total leads found, conversion rates
-- 🔄 Quick actions: Run Supply Scan, Run Demand Scan, View History
-- 📋 Latest results preview
-
-### 2️⃣ **Supply Scan** 🚀
-- 🎯 Set criteria (industry, team size, funding stage)
-- ▶️ Run scan with real-time progress
-- 🏆 Results: Tier 1, 2, 3 companies
-- 💾 Export as CSV/JSON
-- 📊 Detailed company cards (funding, team, location, score)
-
-### 3️⃣ **Demand Scan** 👥
-- ➕ Add companies (name + optional domain)
-- ▶️ Run scan with streaming progress
-- ✅ View qualified leads (all 3 filters passed)
-- 📋 Partial matches (incomplete, not ready yet)
-- 🔍 Signal details (evidence quotes + sources + dates)
-- 📊 Historical scans browser
-
-### 4️⃣ **Insights** 📰
-- 🔄 Refresh from configured sources
-- 📰 Articles ranked by relevance
-- 🏷️ Categories (news, funding, hiring, expansion)
-- 📊 Trending topics
-
-### 5️⃣ **Settings** ⚙️
-- 📋 Supply criteria (YAML editor)
-- 📋 Demand criteria (YAML editor)
-- 🚫 Blocklists (companies, domains)
-- 🔑 API key status
-- 📊 Usage stats (searches, LLM calls)
+| Page | What it does |
+|------|--------------|
+| **Dashboard** | Overview of recent scans and results |
+| **Run Scan** | Start a Supply Scan and watch streamed progress |
+| **Startups** | Ranked startups with score, band and per-criterion breakdown; CSV/JSON export |
+| **Demand Scan** | Add companies (or auto-discover), stream progress, review qualified leads with evidence quotes, sources and dates; browse past scans |
+| **Insights** | MarTech news feed ranked by relevance to your company profile |
+| **Exclusions** | Everything filtered out, and why |
+| **Reports** | Run history and exports |
+| **Settings** | Read-only view of the active configuration |
 
 ---
 
-## 🔒 Security & Performance
+## 🛡️ Reliability & Performance
 
-### Security ✅
-- 🔐 API authentication (FastAPI middleware)
-- 🛡️ Input validation (Pydantic)
-- 🔒 Secrets in environment (never in config)
-- 🚫 Rate limiting on API endpoints
-- ✅ CORS configured (frontend domain only)
+### Security
+- 🔑 API keys live in environment variables, never in code or config
+- 🛡️ Typed request validation (FastAPI / Pydantic)
+- 🌐 CORS restricted to configured frontend origins
 
-### Performance ⚡
-- 🚀 Parallel search (Tavily + SerpAPI simultaneously)
-- 📦 Result caching (Supabase + Redis)
-- 🔄 Streaming progress (WebSocket)
-- 📊 Database indexing (company names, dates)
-- ⏱️ Timeouts on external API calls
+### Performance
+- 🚀 Tavily + SerpAPI queried in parallel; candidates processed concurrently (`max_parallel_candidates`)
+- 📡 Scan progress streamed to the UI (Server-Sent Events)
+- ⏱️ Timeouts on external calls
 
-### Error Handling 🛡️
+### Error Handling
 - ✅ Failed search → fallback to DuckDuckGo
-- ✅ Failed webpage → skip and continue
-- ✅ Failed LLM → retry with backoff
-- ✅ Failed company → record error and next
+- ✅ Failed page → next scraper in the chain (Firecrawl → Tavily → direct → Playwright), then skip
+- ✅ Failed LLM call → logged and routed to the fallback model where configured
+- ✅ Failed company → error recorded, scan continues
 - ✅ All errors logged to `data/errors.log`
 
 ---
 
 ## 💰 Cost Optimization
 
-### API Costs 💵
-
-| Service | Est. Cost | Per |
-|---------|-----------|-----|
-| Tavily | ~$100–200 | Month |
-| SerpAPI | ~$50–100 | Month |
-| Firecrawl | ~$20–50 | Month |
-| Groq | ~$10–30 | Month |
-| Supabase | ~$25–50 | Month |
-
-**Cost Savers:**
-- ✅ DuckDuckGo fallback (free, no key)
-- ✅ Deduplication (don't re-scan same domain)
-- ✅ Caching (don't re-fetch same website)
-- ✅ LLM batching (combine multiple extractions)
-
-### Scan Efficiency
-
-| Metric | Typical |
-|--------|---------|
-| Supply scan (50 companies) | 3–5 minutes |
-| Demand scan (25 companies) | 2–4 minutes |
-| API calls per company | 3–5 (search + scrape + extract) |
-| Cost per company | $0.15–0.35 |
+- **De-duplication:** `seen.json` stops the same company or domain being re-processed across runs
+- **Free fallback:** DuckDuckGo covers search when paid providers fail
+- **Right-sized models:** high-volume extraction on Groq's gpt-oss-120b; Claude Haiku only for the two judgment-sensitive stages
+- **Prompt caching:** the Claude calls use a cacheable prompt prefix
+- **Bounded crawling:** `max_pages_per_company` caps pages read per company
 
 ---
 
 ## 📈 Design Principles
 
 ### 1️⃣ **Evidence-Based Ranking** 📊
-- Every score is justifiable (team × market × funding)
+- Every score is justifiable (a weighted, per-criterion rubric)
 - Every signal has a source (with quote + date)
 - Every lead must pass ALL three filters (no fuzzy logic)
 
@@ -805,7 +626,6 @@ NEXT_PUBLIC_VERCEL_URL=https://scout.app
 
 ### 4️⃣ **Configuration Over Code** ⚙️
 - Business rules in YAML (no Python changes)
-- Criteria editable via UI
 - Settings versionable and auditable
 
 ### 5️⃣ **Time-Based Decision Making** ⏱️
@@ -818,135 +638,72 @@ NEXT_PUBLIC_VERCEL_URL=https://scout.app
 ## 🧪 Testing
 
 ```bash
-# Backend tests
-cd backend
-pytest                          # All tests
-pytest tests/test_search.py     # Search provider
-pytest tests/test_extract.py    # LLM extraction
-pytest tests/test_demand.py     # Demand logic
-pytest --cov=pipeline          # Coverage
-
-# Frontend tests
-cd frontend
-npm test                        # Jest tests
-npm run build                   # Prod build check
+cd supply_agent
+pytest        # 78 tests across 9 files
 ```
+
+Covers API endpoints, provider workflow and fallbacks, official-website resolution, V3 scouting validation, demand auto-discovery, insights pipeline and workload limits.
 
 ---
 
 ## 📁 Project Structure
 
-```
-Scout/
-├── 🎨 frontend/               (Next.js + Vercel)
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── page.tsx        (Dashboard)
-│   │   │   ├── supply/
-│   │   │   ├── demand/
-│   │   │   ├── insights/
-│   │   │   └── settings/
-│   │   ├── components/
-│   │   │   ├── ScanProgress.tsx
-│   │   │   ├── ResultsTable.tsx
-│   │   │   └── Charts/
-│   │   ├── hooks/
-│   │   │   ├── useScan.ts
-│   │   │   ├── useDemand.ts
-│   │   │   └── useExport.ts
-│   │   └── lib/
-│   │       ├── api.ts          (API client)
-│   │       └── utils.ts
-│   ├── public/
-│   └── package.json
-│
-├── 🔧 backend/                (FastAPI + Railway)
-│   ├── api/
-│   │   ├── main.py
-│   │   ├── supply_main.py
-│   │   └── demand_main.py
-│   ├── pipeline/
-│   │   ├── pipeline_runner.py
-│   │   ├── demand/
-│   │   │   └── runner.py
-│   │   └── stages/
-│   │       ├── search.py
-│   │       ├── filter.py
-│   │       ├── scrape.py
-│   │       └── extract.py
-│   ├── utils/
-│   │   ├── search_provider.py
-│   │   ├── web_scraper.py
-│   │   ├── llm_client.py
-│   │   └── dedup.py
-│   ├── config/
-│   │   ├── criteria.yaml
-│   │   ├── demand_criteria.yaml
-│   │   ├── filters.yaml
-│   │   └── settings.yaml
-│   ├── db/
-│   │   ├── models.py
-│   │   └── connection.py
-│   ├── requirements.txt
-│   ├── Dockerfile
-│   ├── railway.yml
-│   └── .env.example
-│
-├── 📊 data/
-│   ├── results.csv / .json
-│   ├── demand_results.json
-│   ├── excluded.csv
-│   ├── runs/               (timestamped snapshots)
-│   ├── insights.json
-│   └── errors.log
-│
-├── 📋 config/              (YAML files)
-│   └── criteria.yaml, demand_criteria.yaml, filters.yaml
-│
-└── 📚 docs/
-    ├── SETUP.md
-    ├── API_REFERENCE.md
-    └── ARCHITECTURE.md
+```text
+Scout_Agent/
+└── supply_agent/
+    ├── api/
+    │   ├── main.py              # FastAPI app: supply, insights, exports, settings
+    │   └── demand_main.py       # Demand Scan routes (SSE streaming)
+    ├── pipeline/
+    │   ├── discovery.py         # Search → candidate companies
+    │   ├── exclude.py           # Two-pass exclusion rules
+    │   ├── resolve.py           # Find the official website
+    │   ├── scrape.py            # Firecrawl → Tavily → direct → Playwright
+    │   ├── scoring.py           # LLM extraction + weighted rubric
+    │   ├── ranking.py           # Sort, band, dedup, write outputs
+    │   ├── funding_lookup.py    # Optional funding search
+    │   ├── pipeline_runner.py   # Supply orchestration
+    │   └── demand/              # Demand Scan pipeline
+    ├── utils/                   # LLM client, search providers, insights, run history
+    ├── config/                  # criteria · demand_criteria · filters · settings (YAML)
+    ├── web/                     # Next.js 15 frontend (src/app, components, lib)
+    ├── tests/                   # pytest suite
+    ├── data/                    # results, runs/, demand_runs/, errors.log
+    ├── railway.toml
+    └── run_dev.sh
 ```
 
 ---
 
 ## 🎯 API Endpoints
 
-### Dashboard
 ```
-GET  /api/dashboard            # Overview metrics
-GET  /api/health               # Service status
-```
+GET  /api/health                       Service status
+GET  /api/dashboard                    Overview metrics
+GET  /api/scopes                       Available scan scopes
+GET  /api/diagnostics                  Run diagnostics
 
-### Supply Scan
-```
-POST /api/supply/scan          # Start new supply scan
-GET  /api/supply/results       # Latest supply results
-GET  /api/supply/history       # Past supply scans
-GET  /api/supply/progress/{id} # Real-time progress
-```
+POST /api/scan                         Start a Supply Scan (streamed)
+GET  /api/scan/stages                  Pipeline stages
+GET  /api/startups                     Ranked startups
+GET  /api/startups/{name}              One startup in detail
+GET  /api/exclusions                   Filtered-out companies
+GET  /api/reports                      Run history
+GET  /api/exports/results.csv|.json    Export results
+GET  /api/exports/excluded.csv         Export exclusions
 
-### Demand Scan
-```
-POST /api/demand/scan          # Start new demand scan
-GET  /api/demand/leads         # Qualified leads
-GET  /api/demand/history       # Past demand scans
-GET  /api/demand/criteria      # Current criteria
-GET  /api/demand/progress/{id} # Real-time progress
-```
+POST /api/demand/scan                  Demand Scan for given companies (streamed)
+POST /api/demand/auto-scan             Demand Scan with auto-discovery (streamed)
+GET  /api/demand/leads                 Qualified leads
+GET  /api/demand/history               Past demand scans
+GET  /api/demand/criteria              Active criteria
+GET  /api/demand/scan/stages           Pipeline stages
 
-### Insights
-```
-GET  /api/insights             # Latest insights
-POST /api/insights/refresh     # Fetch new articles
-```
+GET  /api/insights                     Latest insights
+POST /api/insights/refresh             Fetch new articles (background job)
+GET  /api/insights/refresh/{job_id}    Job status
 
-### Settings
-```
-GET  /api/settings             # All settings
-PUT  /api/settings/criteria    # Update criteria
-PUT  /api/settings/filters     # Update filters
+GET  /api/settings                     Active configuration (read-only)
 ```
 
 ---
@@ -954,52 +711,16 @@ PUT  /api/settings/filters     # Update filters
 ## 🚀 Future Roadmap
 
 ### Phase 2 (Q4 2026)
+- 🗄️ **Database storage** — move from files to Postgres for multi-user history
 - 🤖 **AI-powered outreach templates** — generate emails per company
 - 📞 **CRM integration** — sync leads to Salesforce/HubSpot
-- 📊 **Pipeline analytics** — track conversion rates
 - 🔔 **Alert system** — notify when new high-quality leads appear
 
-### Phase 3 (2025)
+### Phase 3 (2027)
 - 🌍 **International expansion** — support multiple countries
 - 📱 **Mobile app** — iOS/Android native apps
 - 🎬 **Video intelligence** — analyze founder/CEO videos
 - 🤝 **Collaboration features** — team notes, deal tracking
-
----
-
-## 🤝 Contributing
-
-### Before You Start
-1. Review [ARCHITECTURE.md](docs/ARCHITECTURE.md)
-2. Check criteria.yaml/demand_criteria.yaml (don't hardcode)
-3. Test with real companies before merging
-
-### Code Standards
-- ✅ Type hints (Python + TypeScript)
-- ✅ Docstrings on functions
-- ✅ Config-driven (no hardcodes)
-- ✅ Test coverage >80%
-- ✅ Fallbacks for external APIs
-
-### PR Checklist
-- [ ] Tests pass locally
-- [ ] Config changes documented
-- [ ] External API calls have timeouts
-- [ ] Errors logged to errors.log
-- [ ] Frontend shows user-friendly messages
-
----
-
-## 📖 Documentation
-
-| Document | Purpose |
-|----------|---------|
-| **README.md** | Overview, setup, quick start |
-| **PROJECT_WORKFLOW_SIMPLE.md** | Plain-language guide to all features |
-| **PROJECT_WORKFLOW.md** | Detailed technical workflow |
-| **demand_agent.md** | Demand scan signal specifications |
-| **ARCHITECTURE.md** | System design, data flow, invariants |
-| **API_REFERENCE.md** | All endpoints, schemas, examples |
 
 ---
 
@@ -1025,7 +746,6 @@ PUT  /api/settings/filters     # Update filters
 ### ❌ LLM extraction fails
 - Check `GROQ_API_KEY` validity
 - Check if you're hitting rate limits
-- LLM retries automatically 3 times
 - Failed extractions logged to `data/errors.log`
 
 ---
@@ -1038,14 +758,14 @@ PUT  /api/settings/filters     # Update filters
 
 ## 📊 Metrics & Stats
 
-| Metric | Typical |
-|--------|---------|
-| **Scans per week** | 5–10 |
-| **Companies per scan** | 50–250 |
-| **Qualified leads per month** | 15–45 |
-| **Scan time (50 companies)** | 3–5 minutes |
-| **False positive rate** | <5% (3-filter validation) |
-| **Data freshness** | Real-time (within 24h) |
+| Metric | Value |
+|--------|-------|
+| **Automated tests** | 78 (pytest, 9 files) |
+| **Demand signals evaluated** | 27 (9 MarTech Need · 9 Buying Capacity · 9 Actionability) |
+| **Frontend pages** | 8 |
+| **REST endpoints** | 20+ |
+| **Search / scrape providers with fallback** | 5 |
+| **Supply scoring criteria** | 7 (weights sum to 100) |
 
 ---
 
@@ -1053,19 +773,12 @@ PUT  /api/settings/filters     # Update filters
 
 **Frontend:** Next.js + React + Vercel  
 **Backend:** FastAPI + Python + Railway  
-**Data:** Supabase + PostgreSQL  
+**Data:** JSON / CSV on a Railway volume  
 **Search:** Tavily + SerpAPI + DuckDuckGo  
 **Scraping:** Firecrawl + Playwright  
-**LLM:** Groq (gpt-oss-120b)
+**LLM:** Groq (gpt-oss-120b) + Claude Haiku 4.5
 
 ---
 
 **Last Updated:** September 2026  
-**Status:** Production Ready ✅  
-**Version:** 2.0 (Full-Stack Intelligence)
-
----
-
-![Image #4: Scout Results Dashboard]
-![Image #5: Qualified Leads View]
-![Image #6: Signal Evidence]
+**Version:** 2.0
